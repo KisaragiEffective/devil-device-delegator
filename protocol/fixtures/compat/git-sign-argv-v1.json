@@ -1,0 +1,1 @@
+["-Y", "sign", "-n", "git", "-f", "{publicKeyPath}", "{payloadPath}"]

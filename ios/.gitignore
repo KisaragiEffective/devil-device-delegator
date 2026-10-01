@@ -1,0 +1,4 @@
+.build/
+.swiftpm/
+DDDFeasibility.xcodeproj/
+Package.resolved

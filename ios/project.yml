@@ -1,0 +1,31 @@
+name: DDDFeasibility
+options:
+  minimumXcodeGenVersion: 2.42.0
+  deploymentTarget:
+    iOS: '18.0'
+packages:
+  DDDProbes:
+    path: .
+targets:
+  DDDFeasibility:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: DDDProbes
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.ddd.feasibility
+        SWIFT_VERSION: '6.0'
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSFaceIDUsageDescription: Authenticate an explicitly approved single probe signature.
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        TARGETED_DEVICE_FAMILY: '1,2'
+        CODE_SIGN_STYLE: Automatic
+schemes:
+  DDDFeasibility:
+    build:
+      targets:
+        DDDFeasibility: all

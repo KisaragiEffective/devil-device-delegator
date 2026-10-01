@@ -1,0 +1,9 @@
+{
+  "payload": "commit-payload-v1.txt",
+  "payloadSha256": "55aab0786b6c72297fa1da490cb4821864f793109bf90abd725d86941ba33feb",
+  "namespace": "git",
+  "publicKey": "p256-public-v1.pub",
+  "signature": "p256-signature-v1.sshsig",
+  "source": "OpenSSH_10.0p2 Debian-7+deb13u4; ssh-keygen -Y sign; ephemeral software P-256 key destroyed after generation",
+  "privateKeyIncluded": false
+}

@@ -1,0 +1,66 @@
+name: iOS feasibility
+on:
+  push:
+    paths: ['ios/**', 'protocol/**', '.gitattributes', 'docs/ios-feasibility.md', '.github/workflows/ios.yml']
+  pull_request:
+    paths: ['ios/**', 'protocol/**', '.gitattributes', 'docs/ios-feasibility.md', '.github/workflows/ios.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  interop:
+    name: Package consumer and Git interop (${{ matrix.configuration }})
+    runs-on: macos-15
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [debug, release]
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - name: Preserve LF fixture checkout
+        working-directory: ${{ runner.temp }}
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - name: Toolchain evidence
+        run: |
+          xcodebuild -version
+          swift --version
+          git --version
+      - name: Public upstream consumer, OpenSSH and real Git verification
+        run: swift test -c ${{ matrix.configuration }}
+      - name: Export software-only verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-software-interop-${{ matrix.configuration }}
+          path: ios/.build/probe-artifacts/
+          if-no-files-found: warn
+          retention-days: 7
+  app:
+    name: Unsigned device app (Release)
+    runs-on: macos-15
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - name: Preserve LF fixture checkout
+        working-directory: ${{ runner.temp }}
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - name: Toolchain evidence
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Generate minimal native app
+        run: xcodegen generate
+      - name: Build unsigned device app (not installable, no provisioning)
+        run: >-
+          xcodebuild -project DDDFeasibility.xcodeproj -scheme DDDFeasibility
+          -configuration Release -destination 'generic/platform=iOS'
+          -derivedDataPath .build/xcode CODE_SIGNING_ALLOWED=NO build

@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/Ddd.Windows/Ddd.Windows.csproj" />
+  <Project Path="tests/Ddd.CompatSigner/Ddd.CompatSigner.csproj" />
+  <Project Path="tests/Ddd.Windows.Tests/Ddd.Windows.Tests.csproj" />
+</Solution>

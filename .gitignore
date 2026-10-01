@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/.build/
+**/.swiftpm/
+TestResults/
+artifacts/
+*.user
+*.ipa
+.DS_Store
