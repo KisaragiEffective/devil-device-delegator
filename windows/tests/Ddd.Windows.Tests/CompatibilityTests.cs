@@ -195,5 +195,18 @@ public sealed class CompatibilityTests : IDisposable
         Assert.False(File.Exists(Path.Combine(Capture, "payload.bin")));
     }
 
-    public void Dispose() => Directory.Delete(root, recursive: true);
+    internal static void DeleteScratchDirectory(string directory)
+    {
+        // Git loose objects are read-only on Windows. Only modify files inside
+        // this test's disposable tree; preserve other attributes and real errors.
+        foreach (string file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+        {
+            FileAttributes attributes = File.GetAttributes(file);
+            if ((attributes & FileAttributes.ReadOnly) != 0)
+                File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
+        }
+        Directory.Delete(directory, recursive: true);
+    }
+
+    public void Dispose() => DeleteScratchDirectory(root);
 }

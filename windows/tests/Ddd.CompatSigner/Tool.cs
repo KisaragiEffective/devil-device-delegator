@@ -30,8 +30,13 @@ public static class Tool
         Task<string> readError = process.StandardError.ReadToEndAsync(deadline.Token);
         try
         {
-            Task write = WriteInputAsync(process, input, deadline.Token);
-            await Task.WhenAll(write, readOutput, process.WaitForExitAsync(deadline.Token));
+            Task<IOException?> write = WriteInputAsync(process, input, deadline.Token);
+            await Task.WhenAll(write, readOutput, readError, process.WaitForExitAsync(deadline.Token));
+            IOException? inputError = await write;
+            // A rejecting child may exit without consuming stdin. Preserve its exit code
+            // and diagnostics, but never treat incomplete input delivery as success.
+            if (inputError is not null && process.ExitCode == 0)
+                throw new IOException("Tool exited successfully before all supplied stdin could be delivered.", inputError);
             return new(process.ExitCode, output.ToArray(), await readError);
         }
         catch
@@ -43,16 +48,23 @@ public static class Tool
         }
     }
 
-    private static async Task WriteInputAsync(Process process, byte[]? input, CancellationToken cancellationToken)
+    private static async Task<IOException?> WriteInputAsync(Process process, byte[]? input, CancellationToken cancellationToken)
     {
+        IOException? inputError = null;
         try
         {
             if (input is not null)
                 await process.StandardInput.BaseStream.WriteAsync(input, cancellationToken);
         }
+        catch (IOException error)
+        {
+            inputError = error;
+        }
         finally
         {
-            process.StandardInput.Close();
+            try { process.StandardInput.Close(); }
+            catch (IOException error) { inputError ??= error; }
         }
+        return inputError;
     }
 }

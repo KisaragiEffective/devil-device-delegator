@@ -18,7 +18,7 @@ public sealed class TlsFeasibilityTests
     {
         var result = await ExchangeAsync(mismatch: false);
 
-        Assert.True(result.PinChecked);
+        Assert.True(result.PinChecked, HandshakeDiagnostics(result));
         Assert.Null(result.ClientError);
         Assert.Null(result.Server.Error);
         Assert.True(result.Server.Authenticated);
@@ -31,7 +31,7 @@ public sealed class TlsFeasibilityTests
     {
         var result = await ExchangeAsync(mismatch: true);
 
-        Assert.True(result.PinChecked);
+        Assert.True(result.PinChecked, HandshakeDiagnostics(result));
         Assert.IsType<AuthenticationException>(result.ClientError);
         Assert.False(result.PayloadWritten);
         Assert.Empty(result.Server.Payload);
@@ -91,7 +91,11 @@ public sealed class TlsFeasibilityTests
         names.AddDnsName("localhost");
         request.CertificateExtensions.Add(names.Build());
         var now = DateTimeOffset.UtcNow;
-        using var certificate = request.CreateSelfSigned(now.AddMinutes(-1), now.AddMinutes(10));
+        using var originalCertificate = request.CreateSelfSigned(now.AddMinutes(-1), now.AddMinutes(10));
+                using var windowsCertificate = OperatingSystem.IsWindows()
+                    ? ImportForSchannel(originalCertificate)
+                    : null;
+                var certificate = windowsCertificate ?? originalCertificate;
         byte[] expectedPin = SHA256.HashData(certificate.RawData);
         if (mismatch) expectedPin[0] ^= 1;
 
@@ -144,7 +148,28 @@ public sealed class TlsFeasibilityTests
             peer?.Dispose();
             listener.Stop();
             // Observe all server outcomes before disposing the certificate/key.
-            if (serverTask is not null) await serverTask;
+            if (serverTask is not null) await serverTask.WaitAsync(TestDeadline);
+        }
+    }
+
+    private static string HandshakeDiagnostics(ExchangeResult result) =>
+        $"Certificate pin callback checked: {result.PinChecked}; server authenticated: {result.Server.Authenticated}." +
+        $"{Environment.NewLine}Client exception: {result.ClientError?.ToString() ?? "<none>"}" +
+        $"{Environment.NewLine}Server exception: {result.Server.Error?.ToString() ?? "<none>"}";
+
+    private static X509Certificate2 ImportForSchannel(X509Certificate2 certificate)
+    {
+        // Schannel may reject ephemeral keys. DefaultKeySet permits OS temporary
+        // key storage for this short-lived test-only TLS key, never a Git key.
+        byte[] pfx = certificate.Export(X509ContentType.Pfx);
+        try
+        {
+            return X509CertificateLoader.LoadPkcs12(pfx, password: null,
+                keyStorageFlags: X509KeyStorageFlags.DefaultKeySet);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(pfx);
         }
     }
 
