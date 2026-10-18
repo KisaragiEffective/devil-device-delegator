@@ -4,6 +4,12 @@ using Ddd.CompatSigner;
 using Ddd.Windows.Git;
 
 // This executable is deliberately test-only: production never reads these variables or a private key.
+if (args is ["--probe-exit-without-reading-stdin", "0" or "7"])
+{
+    Console.Out.Write("probe stdout");
+    Console.Error.Write("probe stderr");
+    return int.Parse(args[1], System.Globalization.CultureInfo.InvariantCulture);
+}
 using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(20));
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cancellation.Cancel(); };
 string? capture = Environment.GetEnvironmentVariable("DDD_COMPAT_CAPTURE");

@@ -68,3 +68,13 @@ This milestone establishes the byte boundary, **not a production Git commit pars
 The golden was generated once using an ephemeral software key and independently verified with OpenSSH before retaining only its public key and signature. Do not auto-update it to make failing tests pass. Add versioned fixtures after review. `.gitattributes` preserves LF on Windows; future binary fixtures are excluded from text conversion.
 
 Tests cover altered payload, wrong namespace, wrong public key, malformed signature, rejection, cancellation, oversized/empty input, existing signature preservation, unsupported invocation, secret-free errors, and Git abort without creating a commit. Production is tested to ignore the software signer's test environment.
+
+## Windows CI portability follow-up
+
+`gh run view` confirms run [36873826171](https://github.com/KisaragiEffective/devil-device-delegator/actions/runs/36873826171) passed Ubuntu and failed Windows (`compatibility (windows-2025)`, job `110408054374`). Downloading the run/job logs with the current gh authentication returned HTTP 403; the detailed failures below are from the supplied Windows log, not a successful log download.
+
+- The child rejected an invocation without reading stdin, so the parent's concurrent pipe write/close failed. The tool runner now preserves the rejecting child's nonzero exit code and captured diagnostics after draining output. An input-delivery error with exit code zero still throws; it cannot be mistaken for successful signing. Large-input regression tests force both paths rather than relying on a one-byte race.
+- Git loose objects were read-only, causing Windows recursive directory deletion to fail in test teardown. Cleanup now clears only the ReadOnly attribute of files in the disposable test tree before deletion. It does not suppress access/sharing errors or change the actual repository. A read-only-object regression test covers cleanup.
+- TLS tests failed before their pin callback ran; see [TLS feasibility](tls-feasibility.md) for the Schannel-compatible certificate import and newly exposed client/server diagnostics. The original inner TLS exception and a successful Windows rerun are not yet available.
+
+After these changes, local Linux Release tests report **33 passed, 0 failed, 0 skipped**. Windows rerun remains required; Linux success is not Windows execution evidence.
