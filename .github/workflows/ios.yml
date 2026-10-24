@@ -23,7 +23,7 @@ jobs:
       - name: Preserve LF fixture checkout
         working-directory: ${{ runner.temp }}
         run: git config --global core.autocrlf false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Toolchain evidence
         run: |
           xcodebuild -version
@@ -50,7 +50,7 @@ jobs:
       - name: Preserve LF fixture checkout
         working-directory: ${{ runner.temp }}
         run: git config --global core.autocrlf false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Toolchain evidence
         run: |
           xcodebuild -version
