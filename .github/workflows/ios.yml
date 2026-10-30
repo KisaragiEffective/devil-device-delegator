@@ -10,7 +10,7 @@ permissions:
 jobs:
   interop:
     name: Package consumer and Git interop (${{ matrix.configuration }})
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -41,7 +41,7 @@ jobs:
           retention-days: 7
   app:
     name: Unsigned device app (Release)
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 20
     defaults:
       run:
