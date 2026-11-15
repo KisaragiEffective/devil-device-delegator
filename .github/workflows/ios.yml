@@ -33,7 +33,7 @@ jobs:
         run: swift test -c ${{ matrix.configuration }}
       - name: Export software-only verification artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-software-interop-${{ matrix.configuration }}
           path: ios/.build/probe-artifacts/
